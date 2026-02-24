@@ -69,6 +69,7 @@ fallback mode 中は以下を **MUST** 凍結する。
 1. finality 停止 `>= 2h`
 2. 同一 `checkpoint_seq` で `state_root` 不一致を検知
 3. `validator_set_hash` 不一致を検知
+4. `16-bft-liveness-fallback.md` の liveness 停止判定が成立
 
 ### 7.2 発動時動作
 - ノードは **MUST** 新規 block proposal を停止。
@@ -90,3 +91,4 @@ fallback mode 中は以下を **MUST** 凍結する。
 - `12-proposal-evaluation-security.md`
 - `02-consensus.md`
 - `05-storage-layout.md`
+- `16-bft-liveness-fallback.md`

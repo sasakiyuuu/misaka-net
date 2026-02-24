@@ -96,3 +96,5 @@ DoS 耐性のため、全上限は数値固定する。
 ## 9. 他仕様参照
 - 実行決定性: `03-deterministic-execution.md`
 - ストレージ配置: `05-storage-layout.md`
+- block 上限: `15-block-limits.md`
+- P2P DoS 制御: `14-p2p-networking.md`

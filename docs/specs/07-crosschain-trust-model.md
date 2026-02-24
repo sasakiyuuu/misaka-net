@@ -31,10 +31,10 @@ Phase 1 では以下を信頼境界とする。
 
 ## 6. 署名ルール
 ### 6.1 最低署名数
-- 最低署名数は **MUST** `committee_m` とし、`committee_m >= ceil(2N/3)` を満たす。
+- 最低署名数は **MUST** `committee_m` とし、`committee_m >= ceil(2 * committee_n / 3)` を満たす。
 
 ### 6.2 署名対象
-- 署名対象は **MUST** `06` で定義された `signing_message` と一致。
+- 署名対象は **MUST** `06-anchor-collateral-phase1.md` §7.2 で定義された `signing_message` と一致。
 - 別メッセージ署名は **MUST** 無効。
 
 ### 6.3 失敗時
@@ -43,15 +43,15 @@ Phase 1 では以下を信頼境界とする。
 
 ## 7. Solana 側 proof 受け渡し
 Solana へ渡す payload は **MUST** 以下を含む。
-- `slash_proof_v1` 本体（MCS-1 bytes）
-- committee 署名列
+- `slash_proof_v1` 本体（MCS-1 bytes, `committee_signatures` を内包）
 - optional: compact evidence bytes
 
 Program は **MUST** 以下を検証する。
 1. `proof_format_version == 1`
-2. committee 署名が閾値以上
-3. nonce 再利用なし
-4. expiry 未超過
+2. `finality_proof_v1_bytes` をデコードし、`02-consensus.md` §4.3 の全検証規則に一致
+3. committee 署名が閾値以上
+4. nonce 再利用なし
+5. expiry 未超過
 
 ## 8. Phase 2 への移行条件
 Phase 1 から Phase 2 への移行は、以下全条件を **MUST** 満たす。

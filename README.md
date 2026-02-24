@@ -37,6 +37,18 @@ Misaka の仕様策定リポジトリです。
 12. `docs/specs/12-proposal-evaluation-security.md`
     collusion/Sybil/bootstrap bias 対策
 
+### Phase 5: Mainnet Readiness Gaps Fix
+13. `docs/specs/13-test-vectors.md`
+    決定性テストベクタ（v1/v2, tombstone, sys/params, empty）
+14. `docs/specs/14-p2p-networking.md`
+    P2P handshake / peer limits / gossip / scoring / DoS 制御
+15. `docs/specs/15-block-limits.md`
+    max block bytes / tx count / gas 上限と reject 規則
+16. `docs/specs/16-bft-liveness-fallback.md`
+    liveness 停止検知・safe mode・復旧手順
+17. `docs/specs/17-mev-policy.md`
+    MEV 方針（順序不変、許容/非許容、透明性）
+
 ## 仕様の読み方ルール
 - 規範語: **MUST / SHOULD / MAY**
 - 合意クリティカルな値（`state_root`, `checkpoint_seq`, `validator_set_hash`）は各仕様の定義を優先
@@ -44,7 +56,10 @@ Misaka の仕様策定リポジトリです。
 
 ## 実装へ落とす時の最短動線
 1. 01→03→05 を先に実装し、同一入力同一 `state_root` をテスト
-2. 04 の上限値を enforce して 8GB envelope を維持
-3. 06/07 を使って Phase 1 の Anchor 連携を実装
-4. 08/09 で snapshot 同期と WS 運用を実装
-5. 10〜12 で経済・ガバナンス・評価安全性を適用
+2. 13 のテストベクタで決定性を固定（v1/v2, tombstone, sys/params, empty）
+3. 04 と 15 を同時適用して 8GB envelope と block 上限を enforce
+4. 14 を実装し、P2P 伝播と DoS 制御を固定
+5. 06/07 を使って Phase 1 の Anchor 連携を実装
+6. 08/09 で snapshot 同期と WS 運用を実装
+7. 16 を実装し liveness 停止時の safe mode / 復旧を固定
+8. 10〜12 と 17 を適用し、経済・ガバナンス・MEV方針を固定

@@ -109,7 +109,10 @@ function verify_and_restore(snapshot):
 - `kv_entries`
 - `expected_state_root`
 
+詳細形式と必須ケース定義は **MUST** `13-test-vectors.md` に従う。
+
 ## 11. 他仕様参照
 - `01-tx-object-checkpoint.md`
 - `05-storage-layout.md`
 - `09-weak-subjectivity.md`
+- `13-test-vectors.md`

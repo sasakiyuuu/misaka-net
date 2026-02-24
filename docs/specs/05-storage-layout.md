@@ -80,7 +80,10 @@ indexer は **MAY** 上記を搭載する。
 定義:
 - `version_index_latest_only` は、各 `object_id` について `version` 最大の 1 エントリ（Tombstone を含む）。
 - `sys/params/*` は固定キー集合の KV ストアとし、キー/値は MCS-1 bytes でエンコードする。
-- Phase 4 で最低限保持するキー: `state_root_version`, `weak_subjectivity_period_ms`, `committee_n`, `committee_m`, `r_annual`, `p_validator`, `p_grants`, `p_treasury`, `timelock_checkpoints`。
+- Phase 4 で最低限保持するキー: `state_root_version`, `weak_subjectivity_period_ms`, `committee_n`, `committee_m`, `committee_pubkeys`, `committee_id`, `r_annual`, `p_validator`, `p_grants`, `p_treasury`, `timelock_checkpoints`。
+- `sys/params/committee_pubkeys` は **MUST** `list<bytes[32]>`（bytewise 昇順、重複なし）とする。
+- `len(sys/params/committee_pubkeys)` は **MUST** `committee_n` と一致する。
+- `sys/params/committee_id` は **MUST** `SHA3-256(concat(sys/params/committee_pubkeys))` で算出する。
 
 以下は **MUST NOT** ハッシュ対象。
 - `event_log_store_recent`

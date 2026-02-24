@@ -33,12 +33,12 @@ slashing 実行は **MUST** Misaka finality と外部 Multisig（M-of-N）の二
 - Solana Program は **MUST NOT** committee 承認なしで slash を実行する。
 
 ## 5. Multisig パラメータ
-- `committee_n`（総署名者数）
-- `committee_m`（必要署名数）
+- `committee_n: u32`（総署名者数）
+- `committee_m: u32`（必要署名数）
 
 規範:
-- `committee_m` は **MUST** `ceil(2 * committee_n / 3)` 以上。
-- `committee_n` と `committee_m` は **MUST** `sys/params/*` に保存し、ガバナンス経由でのみ変更可能。
+- `committee_m` は **MUST** `ceil(2 * committee_n / 3)` 以上（`ceil` は実数除算結果を切り上げた最小整数）。
+- `committee_n`、`committee_m`、`committee_pubkeys`、`committee_id` は **MUST** `sys/params/*` に保存し、ガバナンス経由でのみ変更可能。
 
 ## 6. Slash 成立条件（Phase 1 固定）
 slash は以下を同時に満たす場合のみ **MUST** 成立する。
@@ -58,27 +58,38 @@ slash は以下を同時に満たす場合のみ **MUST** 成立する。
 4. `checkpoint_digest: bytes[32]`
 5. `state_root: bytes[32]`
 6. `validator_set_hash: bytes[32]`
-7. `accused_validator_pubkey: bytes[32]`
-8. `violation_type: u8`（`1=DOUBLE_SIGN`, `2=DOWNTIME`, `3=INVALID_PROPOSAL`）
-9. `penalty_bps: u16`
-10. `evidence_digest: bytes[32]`
-11. `tx_digest_merkle_proof: list<bytes[32]>`
-12. `nonce: u64`
-13. `expiry_ms: u64`
-14. `committee_id: bytes[32]`
-15. `committee_signatures: list<bytes>`
+7. `finality_proof_v1_bytes: bytes`（`02-consensus.md` §4.3 の MCS-1 bytes）
+8. `accused_validator_pubkey: bytes[32]`
+9. `violation_type: u8`（`1=DOUBLE_SIGN`, `2=DOWNTIME`, `3=INVALID_PROPOSAL`）
+10. `penalty_bps: u16`
+11. `evidence_digest: bytes[32]`
+12. `tx_digest_merkle_proof: list<bytes[32]>`
+13. `nonce: u64`
+14. `expiry_ms: u64`
+15. `committee_id: bytes[32]`
+16. `committee_signatures: list<CommitteeSig>`
 
-### 7.2 署名対象メッセージ
+### 7.2 `CommitteeSig` と署名対象メッセージ
+`CommitteeSig` は以下とする（MCS-1 順）。
+1. `committee_pubkey: bytes[32]`
+2. `signature: bytes[64]`（Ed25519）
+
 `committee_signatures` の署名対象は **MUST** 以下とする。
 
-`signing_message = SHA3-256("MISAKA_SLASH_V1" || MCS-1(fields 1..14))`
+`signing_message = SHA3-256("MISAKA_SLASH_V1" || MCS-1(fields 1..15))`
 
 ### 7.3 妥当性検証
 `slash_proof_v1` は以下を **MUST** 満たす。
 - `checkpoint_digest == SHA3-256(MCS-1(CheckpointHeader))`
 - `state_root` が当該 `checkpoint_seq` の確定値と一致
 - `validator_set_hash` が当該チェックポイントの確定値と一致
-- `committee_signatures` が `committee_m` 以上で有効
+- `finality_proof_v1_bytes` をデコードし、`02-consensus.md` §4.3 の全検証規則に一致
+- `finality_proof_v1.checkpoint_digest == checkpoint_digest`
+- `finality_proof_v1.validator_set_hash == validator_set_hash`
+- `committee_id == sys/params/committee_id` を満たす
+- `committee_id == SHA3-256(concat(sys/params/committee_pubkeys))` を満たす
+- 各 `CommitteeSig.committee_pubkey` は `sys/params/committee_pubkeys` に含まれ、`signing_message` に対し Ed25519 検証成功
+- 有効な `CommitteeSig` のユニーク署名者数が `committee_m` 以上
 - `expiry_ms >= now_ms`
 - 同一 `(checkpoint_seq, accused_validator_pubkey, nonce)` の再利用は **MUST NOT** 許可
 

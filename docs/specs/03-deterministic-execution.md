@@ -156,3 +156,5 @@ TX:
 - データ構造/Checkpoint: `01-tx-object-checkpoint.md`
 - finality/epoch: `02-consensus.md`
 - state_root 算出対象: `05-storage-layout.md`
+- 決定性テストベクタ: `13-test-vectors.md`
+- MEV方針: `17-mev-policy.md`

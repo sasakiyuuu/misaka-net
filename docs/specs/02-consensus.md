@@ -33,6 +33,42 @@ final ブロックは **MUST NOT** 巻き戻される。
 Checkpoint `C(s)` は、含有する全ブロックが final になった時点で final とする。
 `C(s)` final 後、`state_root(C(s))` は **MUST NOT** 変更される。
 
+### 4.3 `finality_proof_v1`（trusted checkpoint 用）
+`09-weak-subjectivity.md` で使用する finality 証跡は **MUST** 次形式とする。
+
+構造体（MCS-1 順）:
+1. `proof_format_version: u16`（固定値 `1`）
+2. `chain_id: u32`
+3. `checkpoint_seq: u64`
+4. `checkpoint_digest: bytes[32]`
+5. `finalized_block_height: u64`
+6. `finalized_round: u32`
+7. `finalized_block_id: bytes[32]`
+8. `validator_set_hash: bytes[32]`
+9. `validator_set_entries: list<ValidatorPowerEntry>`
+10. `commit_signatures: list<CommitSig>`
+
+`ValidatorPowerEntry`（MCS-1 順）:
+1. `validator_pubkey: bytes[32]`
+2. `voting_power: u64`
+
+`CommitSig`（MCS-1 順）:
+1. `validator_pubkey: bytes[32]`
+2. `signature: bytes[64]`（Ed25519）
+
+署名対象:
+- `commit_signing_message = CometBFTCanonicalVoteSignBytes(chain_id, finalized_block_height, finalized_round, finalized_block_id, vote_type=PRECOMMIT)` を **MUST** 使用する。
+
+検証規則:
+- `proof_format_version == 1` を **MUST** 満たす。
+- `checkpoint_digest` は **MUST** `01-tx-object-checkpoint.md` の `CheckpointHeader` と一致する。
+- `finalized_block_height` は **MUST** `checkpoint_seq` に対応する final 済みブロック列に含まれる。
+- `validator_set_entries` は **MUST** `validator_pubkey` bytewise 昇順かつ重複なし。
+- `validator_set_hash` は **MUST** `SHA3-256(concat(validator_pubkey || u64_le(voting_power)))`（昇順連結）と一致する。
+- 各 `commit_signatures` 要素は **MUST** `validator_set_entries` 内の `validator_pubkey` と一致し、`commit_signing_message` に対して署名検証成功する。
+- `commit_signatures` は **MUST** `validator_pubkey` 重複を含まない。
+- 有効署名 voting power 合計は **MUST** `> 2/3`。
+
 ## 5. Epoch 定義
 
 ### 5.1 Epoch 境界
@@ -103,3 +139,5 @@ function on_new_height(height):
 - TX/Object/Checkpoint 構造: `01-tx-object-checkpoint.md`
 - 実行順序と競合解消: `03-deterministic-execution.md`
 - リソース上限: `04-resource-limits.md`
+- P2P handshake / peer 制御: `14-p2p-networking.md`
+- block 上限: `15-block-limits.md`

@@ -24,11 +24,12 @@ trusted checkpoint は **MUST** 以下を含む。
 2. `checkpoint_digest`
 3. `state_root`
 4. `validator_set_hash`
-5. `finality_proof`
+5. `finality_proof_v1_bytes`（`02-consensus.md` §4.3 の MCS-1 bytes）
 
 検証:
 - `checkpoint_digest` 再計算一致
-- `finality_proof` が `validator_set_hash` と整合
+- `finality_proof_v1_bytes` をデコードし、`02-consensus.md` §4.3 の全検証規則に一致
+- `finality_proof_v1.validator_set_hash` が trusted checkpoint の `validator_set_hash` と一致
 - `state_root` がローカル再計算と一致
 
 ## 6. stale checkpoint 起動拒否
@@ -65,6 +66,7 @@ trusted checkpoint は **MUST** 以下を含む。
 - 監査ログは **MUST** 起動時検証結果を保存する。
 
 ## 10. 他仕様参照
+- `01-tx-object-checkpoint.md`
 - `02-consensus.md`
 - `08-state-commitment-and-snapshots.md`
 - `11-governance-and-emergency-mode.md`
