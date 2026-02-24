@@ -53,6 +53,11 @@
 
 ## 5. 必須ベクタ
 
+### 5.0 Vector O2（順序責務不一致 / DET_ORDER_V1）
+- consensus が生成した `checkpoint_tx_digest_list` を意図的に 1 要素入れ替えた入力を与える
+- 期待: execution 側の `verify_det_order_v1` で reject
+- 期待エラー: `ERR_DET_ORDER_MISMATCH`
+
 ### 5.1 Vector E0（empty / v1）
 - `state_root_version=1`
 - `objects=[]`, `version_index_latest_only=[]`, `sys_params=[]`, `txs=[]`
@@ -72,12 +77,18 @@
 を含む
 - 期待: 実装間で `state_root` 一致
 
-### 5.4 Vector V2-1（tombstone + sys/params / v2）
+### 5.4 Vector V2-0（empty / v2）
+- `state_root_version=2`
+- `kv_entries=[]`
+- 期待: `state_root = ZERO_HASH`（32-byte zero）
+
+### 5.5 Vector V2-1（tombstone + sys/params / v2）
 - `state_root_version=2`
 - tombstone と `sys/params/*` を同時に含む
 - 期待: JMT ルールで `state_root` 一致
+- 期待: path 衝突入力は reject
 
-### 5.5 Vector O1（競合順序 / DET_ORDER_V1）
+### 5.6 Vector O1（競合順序 / DET_ORDER_V1）
 - shared tx / owned-only tx / mixed tx を混在
 - `checkpoint_tx_digest_list` が `DET_ORDER_V1` に一致
 - 期待:
@@ -101,6 +112,9 @@
   "checkpoint_seq": 0,
   "inputs": {
     "proof_format_version": 0,
+    "proof_system_id": 0,
+    "finality_proof_v1_bytes_hex": "...",
+    "public_inputs_commitment_hex": "hex32",
     "proof_bytes_hex": "...",
     "public_inputs": {
       "chain_id": 0,
@@ -127,6 +141,7 @@
   "inputs": {
     "proof_format_version": 1,
     "chain_id": 0,
+    "checkpoint_seq": 0,
     "proposal_id_hex": "hex32",
     "input_commitment_hex": "hex32",
     "metrics_commitment_hex": "hex32",
@@ -152,9 +167,16 @@
 - `checkpoint_tx_digest_list` 不一致: **MUST** reject（`ERR_DET_ORDER_MISMATCH`）
 - `tx_digest_merkle_root` 不一致: **MUST** reject（`ERR_TX_MERKLE_MISMATCH`）
 - `state_root` 不一致: **MUST** fail（`ERR_STATE_ROOT_MISMATCH`）
+- state_root v2 path 重複: **MUST** reject（`ERR_STATE_ROOT_DUPLICATE_PATH`）
+- gas payment object 不正: **MUST** reject（`ERR_GAS_PAYMENT_OBJECT_INVALID`）
+- gas 会計 overflow: **MUST** reject（`ERR_GAS_ACCOUNTING_OVERFLOW`）
+- fork finality conflict: **MUST** reject（`ERR_FORK_FINALITY_CONFLICT`）
+- fork validator set mismatch: **MUST** reject（`ERR_FORK_VALIDATOR_SET_MISMATCH`）
+- fork commit power 不足: **MUST** reject（`ERR_FORK_INSUFFICIENT_COMMIT_POWER`）
 - trustless proof version 未対応: **MUST** reject（`ERR_TRUSTLESS_PROOF_VERSION_UNSUPPORTED`）
 - trustless proof system 未登録: **MUST** reject（`ERR_TRUSTLESS_PROOF_SYSTEM_UNSUPPORTED`）
 - trustless proof 検証失敗: **MUST** reject（`ERR_TRUSTLESS_PROOF_VERIFY_FAILED`）
+- trustless verifier hash 不一致: **MUST** reject（`ERR_TRUSTLESS_VERIFIER_HASH_MISMATCH`）
 - trustless proof nonce 再利用: **MUST** reject（`ERR_TRUSTLESS_PROOF_NONCE_REUSED`）
 - trustless proof 期限切れ: **MUST** reject（`ERR_TRUSTLESS_PROOF_EXPIRED`）
 - evaluation commitment 無効: **MUST** reject（`ERR_EVAL_COMMITMENT_INVALID`）

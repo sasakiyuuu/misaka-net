@@ -79,6 +79,7 @@ Solana へ渡す payload は `proof_format_version` に応じて **MUST** 次を
   5. `deprecated_after_checkpoint_seq: u64?`
 - 未登録 `proof_system_id` は **MUST** reject（`ERR_TRUSTLESS_PROOF_SYSTEM_UNSUPPORTED`）。
 - `proof_verifier_registry` 変更は **MUST** `11-governance-and-emergency-mode.md` §5 の timelock フローを経る。
+- Program は **MUST** v2/v3 検証時、`proof_system_id` に対応し、`activated_checkpoint_seq <= checkpoint_seq` かつ（`deprecated_after_checkpoint_seq` 未設定または `checkpoint_seq < deprecated_after_checkpoint_seq`）を満たす要素を選び、実行時 verifier の code hash が `verifier_code_hash` と一致することを検証する。
 
 ### 7.1 `trustless_proof_v2`（Phase 2）
 構造体（MCS-1 順）:
@@ -101,7 +102,7 @@ Solana へ渡す payload は `proof_format_version` に応じて **MUST** 次を
 - デコード後 `finality_proof_v1.validator_set_hash == validator_set_hash` を **MUST** 満たす。
 - `checkpoint_digest`、`state_root`、`validator_set_hash` は **MUST** 当該 `checkpoint_seq` の確定値と一致する。
 - `proof_bytes` は **MUST** `proof_system_id` 対応 verifier で検証成功する。
-- `expiry_ms >= now_ms` を **MUST** 満たす。
+- `expiry_ms >= now_ms` を **MUST** 満たす（`now_ms` は `02-consensus.md` §6.6 に従う）。
 - 同一 `(checkpoint_seq, nonce)` の再利用は **MUST NOT** 許可。
 
 ### 7.2 `trustless_proof_v3`（Phase 3）
@@ -123,7 +124,7 @@ Solana へ渡す payload は `proof_format_version` に応じて **MUST** 次を
 - `public_inputs_commitment` は **MUST** `SHA3-256(MCS-1(chain_id, checkpoint_seq, checkpoint_digest, state_root, validator_set_hash))` と一致する。
 - `proof_bytes` は **MUST** `proof_system_id` 対応 verifier で検証成功する。
 - `checkpoint_digest`、`state_root`、`validator_set_hash` は **MUST** 当該 `checkpoint_seq` の確定値と一致する。
-- `expiry_ms >= now_ms` を **MUST** 満たす。
+- `expiry_ms >= now_ms` を **MUST** 満たす（`now_ms` は `02-consensus.md` §6.6 に従う）。
 - 同一 `(checkpoint_seq, nonce)` の再利用は **MUST NOT** 許可。
 
 ### 7.3 Program 検証手順（共通）
@@ -139,6 +140,7 @@ Program は **MUST** version 別に以下を検証する。
 - `ERR_TRUSTLESS_PROOF_VERSION_UNSUPPORTED`
 - `ERR_TRUSTLESS_PROOF_SYSTEM_UNSUPPORTED`
 - `ERR_TRUSTLESS_PROOF_VERIFY_FAILED`
+- `ERR_TRUSTLESS_VERIFIER_HASH_MISMATCH`
 - `ERR_TRUSTLESS_PROOF_NONCE_REUSED`
 - `ERR_TRUSTLESS_PROOF_EXPIRED`
 
@@ -166,6 +168,7 @@ Phase 1 から Phase 2 への移行は、以下全条件を **MUST** 満たす�
 
 ## 10. 他仕様参照
 - `02-consensus.md`
+- `03-deterministic-execution.md`
 - `06-anchor-collateral-phase1.md`
 - `10-tokenomics.md`
 - `11-governance-and-emergency-mode.md`

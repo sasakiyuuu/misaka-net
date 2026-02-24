@@ -17,7 +17,9 @@
 ## 4. 集計規則
 - `block_bytes` は **MUST** `ordered_tx_list` の MCS-1 bytes 合計で計算。
 - `tx_count` は **MUST** `len(ordered_tx_list)`。
-- `gas_total` は **MUST** `sum(tx.gas_budget)`。
+- block 受入判定用 `gas_total_budget` は **MUST** `sum(tx.gas_budget)`。
+- 実績集計用 `gas_total_charged` は **MUST** `sum(tx.gas_charged)`（`03-deterministic-execution.md` の結果）を使用する。
+- reject 判定に使う `gas_total` は **MUST** `gas_total_budget` と同義とする。
 
 ## 5. 順序規則整合
 - `ordered_tx_list` は **MUST** consensus で確定した順序を使用。
@@ -27,7 +29,7 @@
 ## 6. Reject 規則
 - `block_bytes > MAX_BLOCK_BYTES` は **MUST** reject（`ERR_BLOCK_BYTES_EXCEEDED`）。
 - `tx_count > MAX_TX_COUNT_PER_BLOCK` は **MUST** reject（`ERR_BLOCK_TX_COUNT_EXCEEDED`）。
-- `gas_total > MAX_GAS_PER_BLOCK` は **MUST** reject（`ERR_BLOCK_GAS_EXCEEDED`）。
+- `gas_total_budget > MAX_GAS_PER_BLOCK` は **MUST** reject（`ERR_BLOCK_GAS_EXCEEDED`）。
 - いずれか違反時、その block は **MUST NOT** finality 対象に進む。
 
 ## 7. 提案者側事前検証
@@ -67,7 +69,7 @@
 
 ### 8.3 Shared TX 偏重ケース
 - `shared_tx_count / tx_count > 0.70` の block は **MUST** reject（`ERR_BLOCK_SHARED_RATIO_EXCEEDED`）。
-- `gas_total > 0.85 * MAX_GAS_PER_BLOCK` かつ `shared_tx_count / tx_count > 0.60` の block は **MUST** reject（`ERR_BLOCK_STRESS_ENVELOPE_EXCEEDED`）。
+- `gas_total_budget > 0.85 * MAX_GAS_PER_BLOCK` かつ `shared_tx_count / tx_count > 0.60` の block は **MUST** reject（`ERR_BLOCK_STRESS_ENVELOPE_EXCEEDED`）。
 
 ## 9. 監査ログ
 - 上限違反 reject は **MUST** reason code とともに記録。

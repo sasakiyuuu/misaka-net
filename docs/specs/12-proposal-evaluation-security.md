@@ -156,7 +156,7 @@
 - `input_commitment` は **MUST** `SHA3-256(MCS-1(EvaluationInputCanonical))` と一致する。
 - `metrics_commitment` は **MUST** `SHA3-256(MCS-1(EvaluationMetricsCanonical))` と一致する。
 - `signature` は **MUST** `SHA3-256("MISAKA_EVAL_COMMIT_V1" || MCS-1(fields 1..9) || nonce || expiry_ms)` に対して検証成功する。
-- `expiry_ms >= now_ms` を **MUST** 満たす。
+- `expiry_ms >= now_ms` を **MUST** 満たす（`now_ms` は `02-consensus.md` §6.6 に従う）。
 - 同一 `(checkpoint_seq, proposal_id, nonce)` の再利用は **MUST NOT** 許可。
 - `proof_system_id` に対応する verifier（`07-crosschain-trust-model.md` の verifier registry）で `proof_bytes` が検証成功しない場合は **MUST** reject。
 

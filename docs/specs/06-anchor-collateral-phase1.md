@@ -96,7 +96,7 @@ slash は以下を同時に満たす場合のみ **MUST** 成立する。
 - `committee_id == SHA3-256(concat(sys/params/committee_pubkeys))` を満たす
 - 各 `CommitteeSig.committee_pubkey` は `sys/params/committee_pubkeys` に含まれ、`signing_message` に対し Ed25519 検証成功
 - 有効な `CommitteeSig` のユニーク署名者数が `committee_m` 以上
-- `expiry_ms >= now_ms`
+- `expiry_ms >= now_ms`（`now_ms` は `02-consensus.md` §6.6 の決定論時刻定義に従う）
 - 同一 `(checkpoint_seq, accused_validator_pubkey, nonce)` の再利用は **MUST NOT** 許可
 
 ## 8. lock / unbond / withdraw 規則
@@ -116,6 +116,7 @@ slash は以下を同時に満たす場合のみ **MUST** 成立する。
 - 不正 proof は **MUST** `ERR_INVALID_SLASH_PROOF` で拒否。
 - committee 署名不足は **MUST** `ERR_INSUFFICIENT_COMMITTEE_SIGS`。
 - 有効期限切れは **MUST** `ERR_SLASH_PROOF_EXPIRED`。
+- 経済安全条件未達は **MUST** `ERR_SECURITY_INSUFFICIENT`。
 
 ## 10. 検証シーケンス（必須3ケース）
 

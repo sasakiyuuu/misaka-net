@@ -50,7 +50,7 @@ DoS 耐性のため、全上限は数値固定する。
 - `MAX_INPUTS_PER_TX = 64 objects`
 - `MAX_EVENTS_PER_TX = 128`
 - `MAX_CALL_DEPTH = 32`
-- `MAX_GAS_BUDGET = 50_000_000`
+- `MAX_GAS_BUDGET = 40_000_000`（`15-block-limits.md` の `MAX_GAS_PER_BLOCK` 以下）
 
 ### 4.2 根拠（計測前提/保守値）
 - 8GB では、1 TX の大量 write が VM 一時メモリを押し上げる。
@@ -73,8 +73,28 @@ DoS 耐性のため、全上限は数値固定する。
 - 同率時は **MUST** `received_at` 昇順（先着優先）。
 
 ## 6. ガスと実行時間の安全弁
+
+### 6.1 用語（必須）
+- `gas_budget`: TX が支払い可能な最大ガス。
+- `gas_used`: 実行で実際に消費したガス（失敗時も算出）。
+- `gas_charged`: 課金対象ガス量。**MUST** `min(gas_used, gas_budget)`。
+- `fee_max = gas_budget * gas_price`。
+- `fee_charged = gas_charged * gas_price`。
+- `fee_refund = fee_max - fee_charged`。
+- `gas_payment_object_id`: 手数料支払い Object の `object_id`（`01-tx-object-checkpoint.md` §4.1）。
+
+### 6.2 規範
 - 各 TX は **MUST** `gas_budget` を超えて実行されない。
-- ガス不足時は **MUST** 即時中断し、状態変更を適用しない。
+- `gas_used` 算出は **MUST** 決定論的ガススケジュールで行う（同一入力で同一 `gas_used`）。
+- ガス不足（`gas_used > gas_budget`）時は **MUST** 即時中断し、アクション由来の状態変更を適用しない。
+- 失敗 TX でも `gas_charged` は **MUST** 発生する（詳細は `03-deterministic-execution.md` §9.3）。
+- `fee_charged` は **MUST** `gas_payment_object_id` から徴収する。
+- `fee_refund > 0` の場合、差額は **MUST** 同一 `gas_payment_object_id` に返却する。
+- `fee_max` / `fee_charged` / `fee_refund` 計算で overflow / underflow が発生する TX は **MUST** reject（`ERR_GAS_ACCOUNTING_OVERFLOW`）。
+
+### 6.3 block 上限との整合
+- block 受入判定の `gas_total_budget` は **MUST** `sum(tx.gas_budget)` を使用する（`15-block-limits.md`）。
+- 実績課金の集計は **MUST** `sum(tx.gas_charged)` を別指標として記録する。
 
 ## 7. 失敗時挙動
 - 上限違反 TX は **MUST** consensus 提案前に reject。
@@ -86,6 +106,8 @@ DoS 耐性のため、全上限は数値固定する。
   - `ERR_TOO_MANY_INPUTS`
   - `ERR_CALL_DEPTH_EXCEEDED`
   - `ERR_GAS_BUDGET_EXCEEDED`
+  - `ERR_GAS_PAYMENT_OBJECT_INVALID`
+  - `ERR_GAS_ACCOUNTING_OVERFLOW`
 
 ## 8. 8GB 想定の上限超過ケース（明示）
 以下は **MUST** 警戒ケースとして実装に含める。

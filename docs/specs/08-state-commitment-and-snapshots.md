@@ -30,7 +30,7 @@ state root 算出対象は **MUST** 以下のみ。
 ## 5. Jellyfish Merkle（StateRoot-v2）
 ### 5.1 キー正規化
 - すべての key は **MUST** バイト列として扱う。
-- 走査順は **MUST** bytewise lexicographic。
+- `key` 比較規則は **MUST** bytewise lexicographic。
 - JMT パスキーは **MUST** `path = SHA3-256(key_bytes)`。
 
 ### 5.2 Leaf ハッシュ
@@ -39,10 +39,25 @@ state root 算出対象は **MUST** 以下のみ。
 ### 5.3 Internal ハッシュ
 `node_hash = SHA3-256(0x01 || child_0 || child_1 || ... || child_15)`
 
-### 5.4 空ノード
-空ノード hash は **MUST** `ZERO_HASH = 32-byte zero`。
+### 5.4 空ノード / 空状態
+- 空ノード hash は **MUST** `ZERO_HASH = 32-byte zero`。
+- 子を持たない internal nibble は **MUST** `ZERO_HASH` を使って埋める。
+- エントリ 0 件の空状態 root は **MUST** `ZERO_HASH` とする（v1 の `SHA3-256(empty bytes)` とは別定義）。
 
-### 5.5 決定性要件
+### 5.5 挿入アルゴリズム（必須）
+- 入力は **MUST** `path`（32 bytes）昇順で処理する。
+- 同一 `path` が複数存在する入力は **MUST** reject（`ERR_STATE_ROOT_DUPLICATE_PATH`）。
+- 既存 leaf と prefix 衝突した場合、**MUST** 最長共通 prefix 深度まで internal node を展開し分岐する。
+- `key` 順と `path` 順が異なる場合でも、挿入順は **MUST** `path` 順を優先する。
+
+### 5.6 root 算出手順（必須）
+1. `kv_entries` を `path = SHA3-256(key)` 昇順で正規化（同値時は `key` 昇順）。
+2. 各 entry から `path` と `leaf_hash` を算出。
+3. JMT に正規化済み順（path 順）で leaf を挿入。
+4. bottom-up に `node_hash` を再計算。
+5. ルート hash を `state_root_v2` とする。
+
+### 5.7 決定性要件
 同一 key/value 集合に対し、全実装は **MUST** 同一 `state_root` を生成する。
 
 ## 6. v1→v2 移行規則
@@ -81,6 +96,21 @@ snapshot は **MUST** 以下を含む。
 
 ## 9. 擬似コード
 ```text
+function compute_state_root_v2_jmt(kv_entries):
+    if len(kv_entries) == 0:
+        return ZERO_HASH
+
+    sorted = sort_by_path_then_key(kv_entries)  // path=SHA3_256(key), tie-breaker=key
+    paths = []
+    for (k,v) in sorted:
+        p = SHA3_256(k)
+        if exists(paths, p):
+            reject(ERR_STATE_ROOT_DUPLICATE_PATH)
+        paths.append(p)
+        insert_leaf_jmt(p, SHA3_256(0x00 || u32le(len(k)) || k || u32le(len(v)) || v))
+
+    return recompute_root_bottom_up_with_zero_hash_padding()
+
 function verify_and_restore(snapshot):
     assert hash_checkpoint_header(snapshot.header.checkpoint_header) == snapshot.header.checkpoint_digest
     assert verify_validator_set_hash(snapshot.header.validator_set_hash)

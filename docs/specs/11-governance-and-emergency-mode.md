@@ -1,5 +1,7 @@
 # 11 Governance and Emergency Mode 仕様（Phase 4）
 
+本章のうち cross-chain proof 有効化/registry 更新（`07-crosschain-trust-model.md` §7/§7.0.1 参照）に関わるガバナンス + timelock 手順は **MUST** Phase 1 から規範として適用する。
+
 ## 1. 目的と適用範囲
 本仕様は以下を定義する。
 - パラメータ更新権限と手続き

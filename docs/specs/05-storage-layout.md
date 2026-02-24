@@ -77,6 +77,9 @@ indexer は **MAY** 上記を搭載する。
 2. `version_index_latest_only`
 3. `sys/params/*`
 
+注記:
+- gas 支払いオブジェクト残高と protocol fee vault 残高は `object_store` 上の Object として保持されるため、`charge_gas_only` 更新時も state root に反映される。
+
 定義:
 - `version_index_latest_only` は、各 `object_id` について `version` 最大の 1 エントリ（Tombstone を含む）。
 - `sys/params/*` は固定キー集合の KV ストアとし、キー/値は MCS-1 bytes でエンコードする。

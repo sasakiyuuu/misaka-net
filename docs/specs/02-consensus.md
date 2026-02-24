@@ -98,11 +98,26 @@ validator set 更新入力は以下を **MUST** 含む。
 - 同一 `validator_pubkey` の重複 active は **MUST NOT** 許可。
 - `activation_epoch` は **MUST** 現在 epoch 以上。
 
-### 6.3 validator_set_hash
+### 6.3 最小 validator 集合（必須）
+- `MIN_VALIDATOR_SET_SIZE = 4`（初期値）を **MUST** 使用する。
+- finality 判定対象の active validator 数は **MUST** `>= MIN_VALIDATOR_SET_SIZE`。
+- active validator 数が 0 の集合は **MUST NOT** 生成/適用する（`ERR_EMPTY_VALIDATOR_SET`）。
+- `sum(voting_power)` が 0 の集合は **MUST NOT** 生成/適用する（`ERR_ZERO_TOTAL_VOTING_POWER`）。
+- `MIN_VALIDATOR_SET_SIZE` 違反の更新提案は **MUST** `ERR_VALIDATOR_SET_TOO_SMALL` で reject。
+
+### 6.4 validator_set_hash
 - active validator を `validator_pubkey` bytewise 昇順に並べる。
 - 各要素を `validator_pubkey || little_endian_u64(voting_power)` で連結。
 - `validator_set_hash = SHA3-256(concatenated_bytes)` を **MUST** 用いる。
 - `01-tx-object-checkpoint.md` の `CheckpointHeader.validator_set_hash` は **MUST** これと一致。
+
+### 6.5 境界条件（必須）
+- epoch 境界で pending set を適用する際、`MIN_VALIDATOR_SET_SIZE` / total voting power 条件を再検証し、違反時は **MUST** 現行 set を維持して fail-close する。
+- fail-close 発生時は **MUST** 監査ログへ記録する。
+### 6.6 決定論時刻 `now_ms`（必須）
+- 本仕様群で使用する `now_ms` は **MUST** `CheckpointHeader.timestamp_ms`（`01-tx-object-checkpoint.md`）を指す。
+- `now_ms` は wall-clock を直接参照してはならず、**MUST NOT** ノードローカル時刻から計算する。
+- `checkpoint_seq=s` に対する `now_ms` は **MUST** `C(s).timestamp_ms` と一致する。
 
 ## 7. 実行層インターフェース
 
@@ -113,6 +128,10 @@ consensus 層は実行層に以下を **MUST** 提供する。
 - `block_height`
 - `epoch`
 - `validator_set_hash`
+
+生成責務:
+- consensus 層は **MUST** checkpoint 対象 TX 集合に `DET_ORDER_V1` を適用して `checkpoint_tx_digest_list` を生成する。
+- `checkpoint_tx_digest_list` が `DET_ORDER_V1` 検証に失敗する場合、その checkpoint は **MUST** reject（`ERR_DET_ORDER_MISMATCH`）。
 
 ### 7.2 禁止事項
 - 実行層は **MUST NOT** `ordered_tx_list` のブロック内順序を変更してはならない。

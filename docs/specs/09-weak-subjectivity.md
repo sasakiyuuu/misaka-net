@@ -12,11 +12,13 @@
 ## 3. 定義
 - `trusted_checkpoint`: 起動時に信頼アンカーとして使用する checkpoint
 - `WSP`（Weak Subjectivity Period）: trusted checkpoint の許容鮮度期間
-- `stale_checkpoint`: `now_ms - checkpoint.timestamp_ms > WSP` を満たす checkpoint
+- `stale_checkpoint`: `now_ms - checkpoint.timestamp_ms > WSP` を満たす checkpoint（`now_ms` は `02-consensus.md` §6.6）
 
 ## 4. WSP パラメータ
 - 初期値: `WSP_MS = 14 days`
 - `sys/params/weak_subjectivity_period_ms` が存在する場合、**MUST** それを優先。
+- `now_ms` は **MUST** `02-consensus.md` §6.6 の決定論時刻を使用する。
+- stale 判定に使う `now_ms` は **MUST** 「検証時点の最新 final checkpoint の `timestamp_ms`」を使用する。
 
 ## 5. trusted checkpoint 要件
 trusted checkpoint は **MUST** 以下を含む。

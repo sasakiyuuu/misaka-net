@@ -61,7 +61,12 @@ Checkpoint 内の最終実行順序は **MUST** 以下で決定する。
 - Mixed TX は Shared TX 群に含むため、Owned-only より常に先行。
 - `02-consensus.md` の `checkpoint_tx_digest_list` はこの順序（DET_ORDER_V1）で確定済みとする。
 - 実行層は **MUST** `checkpoint_tx_digest_list` をそのまま実行し、再順序化してはならない。
-- 実行層は **MUST** 実行前に `checkpoint_tx_digest_list` が DET_ORDER_V1 に一致することを検証し、不一致なら Checkpoint を reject する。
+- 実行層は **MUST** 実行前に `checkpoint_tx_digest_list` が DET_ORDER_V1 に一致することを検証し、不一致なら Checkpoint を reject する（`ERR_DET_ORDER_MISMATCH`）。
+
+### 7.5 責務分離（必須）
+- **consensus 層**は **MUST** `ordered_tx_list` から `DET_ORDER_V1` を適用して `checkpoint_tx_digest_list` を生成・最終確定する。
+- **execution 層**は **MUST NOT** 順序生成責務を持たず、受領した `checkpoint_tx_digest_list` の検証と実行のみを行う。
+- consensus と execution の双方で `DET_ORDER_V1` 検証結果が不一致の場合、当該 checkpoint は **MUST** reject。
 
 ## 8. ロック取得順
 
@@ -72,16 +77,24 @@ TX は mutable input に対し排他ロックを取得する。ロックキー�
 - 1 TX 内ロック取得順は **MUST** `object_id` bytewise 昇順。
 - ロック解放順は **MUST** 取得逆順。
 
-## 9. 競合解消
+## 9. 競合解消と失敗時ガス（必須）
 
 ### 9.1 同一 Owned object 競合
 - 先行 TX が version を進めた後、後続 TX の `expected_version` 不一致は **MUST** 失敗。
-- 失敗 TX は **MUST** 状態変更を行わない（ガス課金のみ実施）。
+- 失敗 TX は **MUST** アクション由来の状態変更を行わない（ガス課金のみ実施）。
 
 ### 9.2 Shared object 混在競合
 - Shared TX は 7.3 に従って逐次適用。
 - 後続 TX は直前反映済み shared object の最新版を読む。
-- 前提条件不一致は **MUST** 失敗し、状態変更は行わない。
+- 前提条件不一致は **MUST** 失敗し、アクション由来の状態変更を行わない。
+
+### 9.3 失敗 TX の課金セマンティクス（必須）
+- 失敗 TX でも **MUST** `gas_used` を算出し、`gas_charged = min(gas_used, gas_budget)` を課金する。
+- `charge_gas_only` は **MUST** 以下のみを変更可能とする。
+  1. ガス支払いオブジェクト残高更新（`-fee_charged`、必要時 `+fee_refund`）
+  2. fee 受取先の増加（`fee_charged`、protocol fee vault など）
+- 上記以外の状態（`object_store`, `version_index` の一般オブジェクト更新、任意イベント）は **MUST NOT** 変更。
+- `charge_gas_only` による残高更新は **MUST** `state_root` 算出対象に含まれる（`05-storage-layout.md`）。
 
 ## 10. 実行アルゴリズム擬似コード（DET_EXEC_V1）
 
@@ -101,7 +114,7 @@ function execute_checkpoint(checkpoint_tx_digest_list, pre_state):
         if result.success:
             state = apply_effects(state, result.effects)
         else:
-            charge_gas_only(tx, result)
+            state = apply_gas_charges_only(state, tx, result)
 
         release_locks_reverse(lock_ids)
 
@@ -150,7 +163,7 @@ TX:
 
 ## 12. 禁止事項
 - 実装は **MUST NOT** ローカル時刻・スレッド順・乱数で順序決定してはならない。
-- 実装は **MUST NOT** 失敗 TX で状態変更を行ってはならない。
+- 実装は **MUST NOT** 失敗 TX でアクション由来の状態変更を行ってはならない（9.3 のガス課金状態更新を除く）。
 
 ## 13. 他仕様参照
 - データ構造/Checkpoint: `01-tx-object-checkpoint.md`

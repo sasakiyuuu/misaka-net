@@ -46,11 +46,12 @@ MCS-1 型規則:
 4. `nonce: u64`
 5. `gas_budget: u64`
 6. `gas_price: u64`
-7. `expiration_checkpoint: u64`
-8. `inputs: list<InputRef>`
-9. `actions: list<Action>`
-10. `signature_scheme: u8`（`1=Ed25519`）
-11. `signature: bytes[64]`（Ed25519 固定長）
+7. `gas_payment_object_id: bytes[32]`
+8. `expiration_checkpoint: u64`
+9. `inputs: list<InputRef>`
+10. `actions: list<Action>`
+11. `signature_scheme: u8`（`1=Ed25519`）
+12. `signature: bytes[64]`（Ed25519 固定長）
 
 ### 4.2 InputRef フィールド（シリアライズ順）
 1. `object_id: bytes[32]`
@@ -65,11 +66,41 @@ MCS-1 型規則:
 - `kind=Shared` の場合、`expected_version_present=false` かつ `expected_digest_present=false` を **MUST** 満たす。
 - `kind=Owned` または `kind=Immutable` の場合、`expected_version_present=true` かつ `expected_digest_present=true` を **MUST** 満たす。
 
-### 4.3 Transaction 妥当性
+### 4.3 Action フィールド（定義必須）
+`Transaction.actions` の要素 `Action` は **MUST** 次の tagged-union 形式を使用する（MCS-1 順）。
+
+共通先頭:
+1. `action_kind: u8`
+
+`action_kind=1`（`TRANSFER_OBJECT`）:
+2. `object_id: bytes[32]`
+3. `to_address: bytes[32]`
+
+`action_kind=2`（`MOVE_CALL`）:
+2. `package_id: bytes[32]`
+3. `module_name: string`
+4. `function_name: string`
+5. `type_args: list<string>`
+6. `arg_refs: list<u16>`（`inputs` インデックス参照）
+
+`action_kind=3`（`PUBLISH_PACKAGE`）:
+2. `package_bytes: bytes`
+
+`action_kind=4`（`DELETE_OBJECT`）:
+2. `object_id: bytes[32]`
+
+`action_kind` が未定義値の場合、TX は **MUST** reject（`ERR_ACTION_KIND_UNSUPPORTED`）。
+
+### 4.4 Transaction 妥当性
 - 同一 TX バイト列は **MUST** 同一 `tx_hash` を生成する。
 - `signature_scheme=1` の場合、署名検証は **MUST** Ed25519 で行う。
 - `current_checkpoint` は「実行開始時点の最新 finalized `checkpoint_seq`」を指す。
 - `expiration_checkpoint < current_checkpoint` の TX は **MUST** 無効。
+- `actions` は **MUST** 1 件以上を含む。
+- `MOVE_CALL.arg_refs` の各要素は **MUST** `len(inputs)` 未満。
+- `gas_payment_object_id` は **MUST** `kind=Owned` かつ `access=Mutable` の input と一致する。
+- `gas_payment_object_id` は **MUST** `sender` 所有 Object でなければならない。
+- `gas_payment_object_id` 条件違反 TX は **MUST** reject（`ERR_GAS_PAYMENT_OBJECT_INVALID`）。
 
 ## 5. Object 定義
 
