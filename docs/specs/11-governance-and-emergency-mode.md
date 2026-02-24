@@ -26,6 +26,9 @@
 ### 5.1 更新対象
 - `10-tokenomics.md` の各種率・上限
 - `12-proposal-evaluation-security.md` の評価/安全パラメータ
+- `07-crosschain-trust-model.md` の proof version / verifier registry / proof-system パラメータ
+
+上記更新対象を含む `sys/params/*` 変更は **MUST** 5.2 フロー（ガバナンス承認 + timelock + final checkpoint 境界適用）を経る。
 
 ### 5.2 フロー
 1. `GovCouncil` が proposal 作成

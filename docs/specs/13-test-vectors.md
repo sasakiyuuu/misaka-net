@@ -7,6 +7,8 @@
 - `tx_digest_merkle_root` 決定性
 - `state_root`（StateRoot-v1 / StateRoot-v2）
 - tombstone / `sys/params/*` / empty state ケース
+- `07-crosschain-trust-model.md` の `trustless_proof_v2` / `trustless_proof_v3` reject ケース
+- `12-proposal-evaluation-security.md` の `evaluation_commitment_v1` 検証ケース
 
 ## 2. 規範キーワード
 - **MUST**: 準拠実装に必須
@@ -90,13 +92,80 @@
   4. `state_root` 再計算
   5. `expected` との一致
 
-## 7. 失敗条件
+## 7. Cross-chain / Evaluation Commitment ベクタ形式（JSON）
+### 7.1 trustless proof vector
+```json
+{
+  "vector_id": "string",
+  "category": "trustless_proof_v2|trustless_proof_v3",
+  "checkpoint_seq": 0,
+  "inputs": {
+    "proof_format_version": 0,
+    "proof_bytes_hex": "...",
+    "public_inputs": {
+      "chain_id": 0,
+      "checkpoint_digest_hex": "hex32",
+      "state_root_hex": "hex32",
+      "validator_set_hash_hex": "hex32"
+    },
+    "nonce": 0,
+    "expiry_ms": 0
+  },
+  "expected": {
+    "result": "accept|reject",
+    "error_code": "ERR_*"
+  }
+}
+```
+
+### 7.2 evaluation commitment vector
+```json
+{
+  "vector_id": "string",
+  "category": "evaluation_commitment_v1",
+  "checkpoint_seq": 0,
+  "inputs": {
+    "proof_format_version": 1,
+    "chain_id": 0,
+    "proposal_id_hex": "hex32",
+    "input_commitment_hex": "hex32",
+    "metrics_commitment_hex": "hex32",
+    "proof_system_id": 0,
+    "proof_bytes_hex": "...",
+    "worker_pubkey_hex": "hex32",
+    "signature_hex": "hex64",
+    "nonce": 0,
+    "expiry_ms": 0
+  },
+  "expected": {
+    "result": "accept|reject",
+    "error_code": "ERR_*"
+  }
+}
+```
+
+形式規則:
+- `proof_bytes_hex` は **MUST** `MCS-1` bytes（proof payload 本体）を使用。
+- `expected.error_code` は reject 時に **MUST** 指定。
+
+## 8. 失敗条件
 - `checkpoint_tx_digest_list` 不一致: **MUST** reject（`ERR_DET_ORDER_MISMATCH`）
 - `tx_digest_merkle_root` 不一致: **MUST** reject（`ERR_TX_MERKLE_MISMATCH`）
 - `state_root` 不一致: **MUST** fail（`ERR_STATE_ROOT_MISMATCH`）
+- trustless proof version 未対応: **MUST** reject（`ERR_TRUSTLESS_PROOF_VERSION_UNSUPPORTED`）
+- trustless proof system 未登録: **MUST** reject（`ERR_TRUSTLESS_PROOF_SYSTEM_UNSUPPORTED`）
+- trustless proof 検証失敗: **MUST** reject（`ERR_TRUSTLESS_PROOF_VERIFY_FAILED`）
+- trustless proof nonce 再利用: **MUST** reject（`ERR_TRUSTLESS_PROOF_NONCE_REUSED`）
+- trustless proof 期限切れ: **MUST** reject（`ERR_TRUSTLESS_PROOF_EXPIRED`）
+- evaluation commitment 無効: **MUST** reject（`ERR_EVAL_COMMITMENT_INVALID`）
+- evaluation commitment proof 検証失敗: **MUST** reject（`ERR_EVAL_PROOF_VERIFY_FAILED`）
+- evaluation commitment 期限切れ: **MUST** reject（`ERR_EVAL_COMMITMENT_EXPIRED`）
+- evaluation commitment nonce 再利用: **MUST** reject（`ERR_EVAL_COMMITMENT_NONCE_REUSED`）
 
-## 8. 他仕様参照
+## 9. 他仕様参照
 - `01-tx-object-checkpoint.md`
 - `03-deterministic-execution.md`
 - `05-storage-layout.md`
+- `07-crosschain-trust-model.md`
 - `08-state-commitment-and-snapshots.md`
+- `12-proposal-evaluation-security.md`
