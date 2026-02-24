@@ -26,6 +26,15 @@ safe mode 中、ノードは以下を **MUST** 実施。
 
 safe mode 中は **MUST** `11-governance-and-emergency-mode.md` の fallback 状態を参照する。
 
+### 4.1 経済処理連携（必須）
+- safe mode 中は **MUST** `10-tokenomics.md` の safe mode 式を適用する。
+- safe mode 中は **MUST** epoch 報酬配分を停止（`Reward_i = 0`）。
+- safe mode 中は **MUST** grant 配分を停止（`GrantPool_t = 0`）。
+
+### 4.2 long-stall 判定
+- safe mode 継続が `T_STALL_LONG = 7 days` 以上で `long_stall_active=true`。
+- long-stall 中のインフレ率は **MUST** `r_epoch_safe` を使用する（初期値 `0`）。
+
 ## 5. 復旧手順
 1. 直近 final checkpoint を取得
 2. `validator_set_hash` 一致を検証
@@ -55,4 +64,5 @@ safe mode 中は **MUST** `11-governance-and-emergency-mode.md` の fallback 状
 - `03-deterministic-execution.md`
 - `08-state-commitment-and-snapshots.md`
 - `09-weak-subjectivity.md`
+- `10-tokenomics.md`
 - `11-governance-and-emergency-mode.md`

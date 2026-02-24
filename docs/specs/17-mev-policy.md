@@ -23,11 +23,19 @@
 - private bundle を使った順序上書きは **MUST NOT**。
 - 検証不能な off-chain side agreement による順序固定は **MUST NOT**。
 
+### 5.1 経済的強制（必須）
+- proposer は **MUST** `04-resource-limits.md` の `effective_fee_per_byte` 優先規則と整合する候補集合から block を作る。
+- `PRIORITY_WINDOW = 1_000` 件の高優先度 TX 集合を **MUST** 評価対象とする。
+- 検証可能な無効理由（期限切れ/検証失敗）を除き、`PRIORITY_WINDOW` からの除外率は **MUST** `<= 1%`。
+- 除外率 `> 1%` は **MUST** `ERR_MEV_POLICY_VIOLATION`。
+
 ## 6. 透明性要件
 - 各 block/ checkpoint について以下を **MUST** 記録。
   - `ordered_tx_list` のハッシュ
   - `checkpoint_tx_digest_list`
   - reject された高優先度 TX の件数
+  - `priority_window_hash = SHA3-256(concat(tx_hashes in PRIORITY_WINDOW))`
+  - `priority_exclusion_rate`
 - 監査可能ログは **SHOULD** 公開 API で取得可能にする。
 
 ## 7. 監査・違反対応
@@ -42,4 +50,6 @@
 - `02-consensus.md`
 - `03-deterministic-execution.md`
 - `04-resource-limits.md`
+- `10-tokenomics.md`
 - `11-governance-and-emergency-mode.md`
+- `15-block-limits.md`

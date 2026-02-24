@@ -98,3 +98,4 @@ DoS 耐性のため、全上限は数値固定する。
 - ストレージ配置: `05-storage-layout.md`
 - block 上限: `15-block-limits.md`
 - P2P DoS 制御: `14-p2p-networking.md`
+- MEV 優先度整合: `17-mev-policy.md`

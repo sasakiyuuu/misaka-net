@@ -57,8 +57,28 @@
 3. 補正履歴を監査ログへ記録
 
 ## 7. 不正検知
-- 相関が高い投票クラスターは **MUST** collusion 検査対象。
-- Sybil 疑い ID は **MUST** 一時隔離し、評価重みを 0 に設定。
+
+### 7.1 Collusion 指標（必須）
+定義:
+- `v_i`: evaluator i の rating ベクトル（proposal 次元）
+- `pearson(i,j)`: `corr(v_i, v_j)`
+- `cosine(i,j)`: `(v_i · v_j) / (||v_i|| * ||v_j||)`
+
+閾値:
+- `pearson(i,j) >= 0.90` かつ `cosine(i,j) >= 0.95` が `3` epoch 連続した evaluator 群は **MUST** collusion suspect と判定。
+
+### 7.2 Sybil 指標（必須）
+定義:
+- `P_cluster`: suspect cluster の rating 分布
+- `P_global`: 全 evaluator の rating 分布
+- `D_KL(P_cluster || P_global)`: KL divergence
+
+閾値:
+- `D_KL(P_cluster || P_global) <= 0.05` かつ onboarding window 内に ID 増加率が `>= 2x` の場合、当該 cluster は **MUST** sybil suspect と判定。
+
+### 7.3 対処規則
+- collusion/sybil suspect evaluator は **MUST** 1 epoch の隔離を適用し、評価重みを `0` に設定。
+- 連続再発時、`rep_i` は **MUST** 追加で `0.5` 倍減衰。
 - 検知/解除ルールは **MUST** `sys/params/*` に保存し、ガバナンス変更のみ許可。
 
 ## 8. 監査可能性

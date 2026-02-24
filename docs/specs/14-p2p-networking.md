@@ -37,10 +37,22 @@
 - 超過は **MUST** 切断。
 
 ## 4. Peer Limits
-- `MAX_INBOUND_PEERS = 80`
-- `MAX_OUTBOUND_PEERS = 20`
-- 同一 /24 サブネット上限は **MUST** `<= 5`
+- `MAX_INBOUND_PEERS = 48`
+- `MAX_OUTBOUND_PEERS = 16`
+- 同一 /24 サブネット上限は **MUST** `<= 2`
+- 同一 ASN 上限は **MUST** inbound `<= 8`, outbound `<= 2`
 - 同一 `node_id` の重複接続は **MUST NOT** 許可。
+
+### 4.1 Eclipse 防御（必須）
+- outbound peer 集合は **MUST** 少なくとも 8 個の異なる /24 を含む。
+- outbound peer 集合は **MUST** 少なくとも 4 個の異なる ASN を含む。
+- outbound peer の 25% は **MUST** `OUTBOUND_ROTATE_INTERVAL = 30 min` ごとに再接続する。
+- inbound 受入は **MUST** ランダム化し、接続確立時刻の偏りを抑制する。
+
+### 4.2 Bootstrap 戦略（必須）
+- ノードは **MUST** `SEED_SET_MIN = 3` 個の独立 seed source を保持。
+- 各 seed source からの初期接続数は **MUST** `<= 1/3 * MAX_OUTBOUND_PEERS`。
+- bootstrap 直後の同期先は **MUST** `validator_set_hash` 一致 peer を優先。
 
 ## 5. Gossip
 
@@ -73,10 +85,21 @@
 - 連続違反 3 回で **MUST** `BAN_DURATION = 10 min`。
 
 ## 7. DoS 防御
-- 受信 `GossipTx` は peer ごとに **MUST** `<= 200 tx/sec`。
+- 受信 `GossipTx` は peer ごとに **MUST** `<= 100 tx/sec`。
 - 受信 `GossipTx` サイズは **MUST** `04-resource-limits.md` の `MAX_TX_SIZE` 以下。
 - block 関連受信は **MUST** `15-block-limits.md` 上限を超える payload を reject。
 - メモリ圧迫時は **MUST** `04` の admission tightening に従う。
+
+### 7.1 帯域上限（必須）
+- peer あたり受信帯域は **MUST** `<= 1 MiB/s`。
+- peer あたり送信帯域は **MUST** `<= 1 MiB/s`。
+- ノード全体の受信帯域は **MUST** `<= 24 MiB/s`。
+- ノード全体の送信帯域は **MUST** `<= 24 MiB/s`。
+
+### 7.2 burst 制御（必須）
+- 受信キュー総量は **MUST** `RX_QUEUE_MAX_BYTES = 64 MiB` 以下。
+- peer 単位の burst は **MUST** `RX_BURST_MAX_BYTES = 4 MiB` 以下。
+- 上限超過 peer は **MUST** 1 分間 throttling、3 回連続で **MUST** BAN。
 
 ## 8. 監査ログ
 - 切断、BAN、重大不整合（順序不一致等）は **MUST** 監査ログ記録。

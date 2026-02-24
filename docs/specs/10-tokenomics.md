@@ -17,12 +17,20 @@
 - `r_annual`: 年率インフレ
 - `EPOCHS_PER_YEAR = 365`
 - `r_epoch = r_annual / EPOCHS_PER_YEAR`
+- `safe_mode_active`: `16-bft-liveness-fallback.md` で定義される safe mode 状態
+- `long_stall_active`: safe mode が `T_STALL_LONG = 7 days` 以上継続した状態
+- `r_epoch_safe = 0`（safe mode 中の既定値）
 
 ### 4.2 式
+通常時:
 `Inflation_t = S_t * r_epoch`
+
+safe mode 時:
+`Inflation_t = S_t * r_epoch_safe`
 
 初期値:
 - `r_annual = 0.07`
+- `r_epoch_safe = 0`
 
 ## 5. 報酬配分
 ### 5.1 全体配分
@@ -34,7 +42,11 @@
 - `p_validator + p_grants + p_treasury = 1.0` を **MUST** 満たす。
 
 ### 5.2 validator 報酬式
+通常時:
 `Reward_i = Inflation_t * p_validator * (W_i / W_total) * availability_i`
+
+safe mode / long-stall 時:
+`Reward_i = 0`
 
 - `W_i`: validator i の voting power
 - `W_total`: active validator 全体の voting power 合計（`sum(W_i)`）
@@ -63,7 +75,11 @@
 
 ## 7. Proposal grant 原資と上限
 ### 7.1 原資
+通常時:
 `GrantPool_t = Inflation_t * p_grants`
+
+safe mode / long-stall 時:
+`GrantPool_t = 0`
 
 ### 7.2 上限
 - 1 proposal 上限: `0.50% * Inflation_t`
@@ -78,3 +94,4 @@
 - `05-storage-layout.md`
 - `11-governance-and-emergency-mode.md`
 - `12-proposal-evaluation-security.md`
+- `16-bft-liveness-fallback.md`
