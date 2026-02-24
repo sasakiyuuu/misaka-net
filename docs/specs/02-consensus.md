@@ -4,6 +4,11 @@
 本仕様は Misaka Phase 0/1 のコンセンサス層を定義する。
 Phase 1 の採用方式は **CometBFT/Tendermint 系**（CometBFT v0.38 互換）とする。
 
+### 1.1 Phase 1 の位置づけ（戦略明示）
+- Phase 1 は **MUST** CometBFT 依存の現実運用フェーズとして扱う。
+- Phase 1 は **MUST NOT** 「独立実装済み L1 と同等の分散性能」を主張しない。
+- 独立 L1 への移行は **MAY** 検討するが、Phase 1 仕様準拠条件には含めない。
+
 本仕様は以下を固定する。
 - finality 定義
 - epoch と validator set 更新
@@ -135,9 +140,23 @@ function on_new_height(height):
         validator_set = pending_set_for_epoch(current_epoch)
 ```
 
+### 9.3 Adversarial Simulation / Fork Proof 要件（必須）
+準拠実装は **MUST** 以下を実施する。
+1. 同一 `checkpoint_seq` に対し異なる `finalized_block_id` を含む `finality_proof_v1` を入力し、両方 reject を確認。
+2. 旧 `validator_set_hash` を混入した `finality_proof_v1` を入力し reject を確認。
+3. commit 署名集合が `>2/3` を満たさない fork 証跡を入力し reject を確認。
+
+拒否時エラーコード:
+- `ERR_FORK_FINALITY_CONFLICT`
+- `ERR_FORK_VALIDATOR_SET_MISMATCH`
+- `ERR_FORK_INSUFFICIENT_COMMIT_POWER`
+
+上記テスト入力/期待結果は **MUST** `13-test-vectors.md` 形式で保存する。
+
 ## 10. 他仕様参照
 - TX/Object/Checkpoint 構造: `01-tx-object-checkpoint.md`
 - 実行順序と競合解消: `03-deterministic-execution.md`
 - リソース上限: `04-resource-limits.md`
+- 決定性テストベクタ: `13-test-vectors.md`
 - P2P handshake / peer 制御: `14-p2p-networking.md`
 - block 上限: `15-block-limits.md`

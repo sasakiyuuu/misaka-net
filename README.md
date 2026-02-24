@@ -9,7 +9,7 @@ Misaka の仕様策定リポジトリです。
 1. `docs/specs/01-tx-object-checkpoint.md`
    TX / Object / Checkpoint の canonical 定義
 2. `docs/specs/02-consensus.md`
-   CometBFT/Tendermint 系の finality・epoch・validator set 更新
+   CometBFT/Tendermint 系の finality・epoch・validator set 更新（Phase 1 現実運用）
 3. `docs/specs/03-deterministic-execution.md`
    shared object を含む決定論的実行順序
 4. `docs/specs/04-resource-limits.md`
@@ -48,6 +48,10 @@ Misaka の仕様策定リポジトリです。
     liveness 停止検知・safe mode・復旧手順
 17. `docs/specs/17-mev-policy.md`
     MEV 方針（順序不変、許容/非許容、透明性）
+
+## 位置づけ（戦略）
+- Phase 1 は CometBFT 依存の現実運用フェーズ
+- 独立 L1 化は将来移行ターゲット（Phase 1 の前提にはしない）
 
 ## 仕様の読み方ルール
 - 規範語: **MUST / SHOULD / MAY**

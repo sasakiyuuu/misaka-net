@@ -63,6 +63,13 @@ fallback mode 中は以下を **MUST** 凍結する。
 2. Solana 連携 TX 成功率が `>= 99%` を 1h 維持
 3. `EmergencyCouncil` が `>= 3/5` 署名で解除決議
 
+### 6.5 outage tier 連携（必須）
+- `T_OUTAGE >= 7d` で Tier-1 を **MUST** 適用（`16-bft-liveness-fallback.md`）
+- `T_OUTAGE >= 30d` で Tier-2 を **MUST** 適用（governance freeze）
+- `T_OUTAGE >= 90d` で Tier-3 を **MUST** 適用（tokenomics halt）
+
+解除時は **MUST** Tier-3 → Tier-2 → Tier-1 の逆順で解除判定する。
+
 ## 7. emergency local override
 ### 7.1 発動条件
 ノードは次のいずれかで local override を **MAY** 発動。

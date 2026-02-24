@@ -24,6 +24,25 @@ Phase 1 では以下を信頼境界とする。
 - Phase 1 は **MUST NOT** 完全 trustless slashing を主張しない。
 - committee 署名なしの自動 slash は **MUST NOT** 実装する。
 
+### 4.3 経済安全定量化（必須）
+定義:
+- `S_slashable`: Solana 側で slash 実行可能な合計担保量
+- `c_sig`: committee 署名者 1 名あたりの最小買収コスト（USD 換算）
+- `C_committee = committee_m * c_sig`
+- `C_split = (committee_n - committee_m + 1) * c_sig`
+- `T_outage`: Solana 停止継続時間
+
+`f_outage(T_outage)` は **MUST** 次を使用。
+- `T_outage < 7d` → `1.0`
+- `7d <= T_outage < 30d` → `0.7`
+- `30d <= T_outage < 90d` → `0.4`
+- `T_outage >= 90d` → `0.2`
+
+- `S_effective = S_slashable * f_outage(T_outage)`
+- 安全条件として `min(C_committee, C_split) >= k_security * S_effective` を **MUST** 満たす（初期値 `k_security = 1.0`）。
+
+上記条件を満たさない期間、Phase 1 security level は **MUST** `degraded` として扱う。
+
 ## 5. 判定主体（曖昧さ排除）
 - `slash_proof` の一次整合性（checkpoint/state_root/validator_set_hash）は **MUST** Anchor 側検証ロジックが判定。
 - slash 実行承認は **MUST** Slash Committee（M-of-N）が判定。
@@ -60,6 +79,11 @@ Phase 1 から Phase 2 への移行は、以下全条件を **MUST** 満たす�
 3. 悪性 proof テスト（偽state_root/偽validator_set_hash）で拒否を確認
 4. ガバナンス承認 + timelock 経過
 
+### 8.1 Adversarial Simulation 受け入れ基準（必須）
+- committee 買収シナリオ、committee 分裂シナリオ、Solana 停止シナリオ（7d/30d/90d）を **MUST** シミュレーションする。
+- 各シナリオで `min(C_committee, C_split) / S_effective` を **MUST** 出力し、`>= 1.0` を維持できない場合は Phase 2 移行を **MUST NOT** 承認する。
+- シミュレーション入力/出力は **MUST** 監査ログに保存し、`checkpoint_seq` と紐付ける。
+
 ## 9. trustless claim 許可条件
 「trustless」を名乗るのは以下成立時のみ **MUST** 許可。
 - 外部チェーン上で Misaka finality を committee 非依存で検証可能
@@ -71,4 +95,6 @@ Phase 1 から Phase 2 への移行は、以下全条件を **MUST** 満たす�
 ## 10. 他仕様参照
 - `02-consensus.md`
 - `06-anchor-collateral-phase1.md`
+- `10-tokenomics.md`
 - `11-governance-and-emergency-mode.md`
+- `16-bft-liveness-fallback.md`

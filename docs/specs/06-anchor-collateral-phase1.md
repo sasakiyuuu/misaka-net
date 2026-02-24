@@ -40,6 +40,12 @@ slashing 実行は **MUST** Misaka finality と外部 Multisig（M-of-N）の二
 - `committee_m` は **MUST** `ceil(2 * committee_n / 3)` 以上（`ceil` は実数除算結果を切り上げた最小整数）。
 - `committee_n`、`committee_m`、`committee_pubkeys`、`committee_id` は **MUST** `sys/params/*` に保存し、ガバナンス経由でのみ変更可能。
 
+### 5.1 経済安全パラメータ（必須）
+- `c_sig`: committee 署名者 1 名あたりの最小買収コスト（USD 換算）
+- `k_security`: 安全係数（初期値 `1.0`）
+
+`07-crosschain-trust-model.md` の安全条件を満たせない場合、Anchor Operator は **MUST** 新規 slash 実行要求を停止し、`ERR_SECURITY_INSUFFICIENT` を記録する。
+
 ## 6. Slash 成立条件（Phase 1 固定）
 slash は以下を同時に満たす場合のみ **MUST** 成立する。
 1. Misaka finality 証明が有効
@@ -165,3 +171,4 @@ sequenceDiagram
 - `03-deterministic-execution.md`
 - `05-storage-layout.md`
 - `07-crosschain-trust-model.md`
+- `10-tokenomics.md`

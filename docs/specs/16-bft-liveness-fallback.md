@@ -35,6 +35,16 @@ safe mode 中は **MUST** `11-governance-and-emergency-mode.md` の fallback 状
 - safe mode 継続が `T_STALL_LONG = 7 days` 以上で `long_stall_active=true`。
 - long-stall 中のインフレ率は **MUST** `r_epoch_safe` を使用する（初期値 `0`）。
 
+### 4.3 outage tier（必須）
+- `T_STALL >= 7 days` で Tier-1（long-stall）
+- `T_STALL >= 30 days` で Tier-2（governance freeze）
+- `T_STALL >= 90 days` で Tier-3（tokenomics halt）
+
+Tier 動作:
+- Tier-1: `10-tokenomics.md` の safe mode 経済式を適用
+- Tier-2: `sys/params/*` の恒久パラメータ更新を **MUST NOT** 実行
+- Tier-3: `Inflation_t`, `Reward_i`, `GrantPool_t` を **MUST** 0 に固定
+
 ## 5. 復旧手順
 1. 直近 final checkpoint を取得
 2. `validator_set_hash` 一致を検証
@@ -58,6 +68,13 @@ safe mode 中は **MUST** `11-governance-and-emergency-mode.md` の fallback 状
 ## 8. 監査ログ
 - 停止検知、safe mode 遷移、復旧失敗、復帰判定は **MUST** 監査ログに記録。
 - ログは **MUST** `checkpoint_seq` 参照可能。
+
+### 8.1 Adversarial Simulation（必須）
+- 実装は **MUST** 以下を定期実行し、結果を監査ログ化する。
+  1. `K_COMMIT_FAIL` 連続失敗から safe mode 遷移
+  2. forked finality 証跡入力（`02-consensus.md` の fork 要件）
+  3. 7d/30d/90d 継続停止シナリオ
+- 各シナリオで期待どおり Tier 遷移しない場合、ノードは **MUST** 通常復帰を拒否。
 
 ## 9. 他仕様参照
 - `02-consensus.md`

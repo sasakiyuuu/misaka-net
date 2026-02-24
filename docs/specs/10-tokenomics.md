@@ -55,6 +55,11 @@ safe mode / long-stall 時:
 ## 6. slashing penalty
 
 > フェーズ境界: Phase 1〜3 のクロスチェーン slashing 実行は `06-anchor-collateral-phase1.md` / `07-crosschain-trust-model.md` に従う。Phase 4 は本仕様の経済計算を規定する。
+
+### 6.0 Cross-chain 経済リンク（必須）
+- `S_slashable = sum(Stake_i)`（外部チェーンで slash 実行可能な担保合計）
+- `S_slashable` は **MUST** epoch ごとに監査ログへ記録し、`07-crosschain-trust-model.md` の安全条件評価に使用する。
+
 ### 6.1 種別
 - `DOUBLE_SIGN`
 - `DOWNTIME`
@@ -85,13 +90,25 @@ safe mode / long-stall 時:
 - 1 proposal 上限: `0.50% * Inflation_t`
 - 1 epoch 総額上限: `GrantPool_t`
 
-## 8. パラメータ更新
+## 8. 8GB Validator Profitability Check（必須）
+定義:
+- `C_8GB_epoch`: 8GB validator の epoch あたり運用コスト（USD 換算）
+- `Fees_i`: validator i の epoch 手数料収入
+- `Profit_i = Reward_i + Fees_i - C_8GB_epoch`
+
+受け入れ基準:
+- 標準負荷（`04` + `15` 上限）で、アクティブ validator の中央値 `Profit_i` は **MUST** `>= 0`。
+- 中央値 `Profit_i < 0` が `3` epoch 連続した場合、`profitability_warning` を **MUST** 発行し、パラメータ見直し proposal を **MUST** 要求する。
+
+## 9. パラメータ更新
 - 全パラメータは **MUST** `sys/params/*` に MCS-1 で保存。
 - 更新は **MUST** `11-governance-and-emergency-mode.md` の timelock を経る。
 
-## 9. 他仕様参照
+## 10. 他仕様参照
 - `02-consensus.md`
+- `04-resource-limits.md`
 - `05-storage-layout.md`
 - `11-governance-and-emergency-mode.md`
 - `12-proposal-evaluation-security.md`
+- `15-block-limits.md`
 - `16-bft-liveness-fallback.md`

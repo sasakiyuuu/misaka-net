@@ -29,6 +29,21 @@
 - 検証可能な無効理由（期限切れ/検証失敗）を除き、`PRIORITY_WINDOW` からの除外率は **MUST** `<= 1%`。
 - 除外率 `> 1%` は **MUST** `ERR_MEV_POLICY_VIOLATION`。
 
+### 5.2 forced inclusion（必須）
+- `MAX_INCLUSION_DELAY_BLOCKS = 5` を **MUST** 使用する。
+- 有効 TX（期限内・検証成功）が mempool 観測後 `MAX_INCLUSION_DELAY_BLOCKS` を超えて未包含の場合、proposer は **MUST** inclusion proof を公開する。
+
+`inclusion_proof_v1`（MCS-1 順）:
+1. `tx_hash: bytes[32]`
+2. `observed_at_height: u64`
+3. `deadline_height: u64`
+4. `priority_window_hash: bytes[32]`
+5. `exclusion_reason: u8`（`1=EXPIRED`, `2=INVALID`, `3=GAS_TOO_LOW`）
+6. `proposer_pubkey: bytes[32]`
+7. `signature: bytes[64]`
+
+- `exclusion_reason` が検証不能な場合、ノードは **MUST** `ERR_MEV_POLICY_VIOLATION` を記録する。
+
 ## 6. 透明性要件
 - 各 block/ checkpoint について以下を **MUST** 記録。
   - `ordered_tx_list` のハッシュ
@@ -36,6 +51,7 @@
   - reject された高優先度 TX の件数
   - `priority_window_hash = SHA3-256(concat(tx_hashes in PRIORITY_WINDOW))`
   - `priority_exclusion_rate`
+  - `inclusion_proof_v1`（該当時）
 - 監査可能ログは **SHOULD** 公開 API で取得可能にする。
 
 ## 7. 監査・違反対応
